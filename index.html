@@ -261,7 +261,10 @@
   .gabs-top .fx:hover{background:rgba(255,255,255,.3)}
   .gabs-top .l2{font-size:12px;opacity:.92;margin-top:6px}
   .gabs-top .l2 b.ruim{color:#ffd0d0}
-  .gabs-top .l3{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:12px}
+  .gabs-top .l3{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:8px;font-size:12px}
+  .gabs-top .l4{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:5px;font-size:11px;opacity:.9}
+  .gabs-top .l4[hidden]{display:none}
+  .gabs-top .l4 button{border:1px solid rgba(255,255,255,.4);background:transparent;color:inherit;border-radius:6px;font-size:11px;padding:1px 6px;cursor:pointer}
   .gabs-top .l3 b{font-size:14px}
   .gabs-top .l3 button{border:1px solid rgba(255,255,255,.4);background:transparent;color:inherit;border-radius:6px;font-size:11px;padding:2px 7px;cursor:pointer}
   .gabs-busca{box-sizing:border-box;align-self:stretch;width:auto;margin:10px 12px 6px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--field);color:var(--ink);font:inherit;font-size:13px}
@@ -468,7 +471,8 @@
   <div class="gabs-top">
     <div class="l1"><h2>🏛 Verbas dos gabinetes</h2><button type="button" class="fx" data-gabfechar title="Recolher">‹</button></div>
     <div class="l2" data-gabresumo></div>
-    <div class="l3">Verba por gabinete: <b data-gabverba></b><button type="button" data-gabverbaed title="Alterar a verba">alterar</button></div>
+    <div class="l3">Verba por gabinete: <b data-gabverba></b><button type="button" data-gabverbaed title="Alterar a verba">alterar</button><button type="button" data-gabreaj title="Aplicar um reajuste percentual na verba e no valor de todos os padrões">reajuste %</button></div>
+    <div class="l4" data-gabreajinfo hidden><span data-gabreajtxt></span><button type="button" data-gabreajdesf title="Desfazer o último reajuste">desfazer último</button></div>
   </div>
   <div class="gabs-mes"><label>🗓 Mês acompanhado <input type="month" data-gabmes></label><span data-gabmesres></span></div>
   <input class="gabs-busca" data-gabbusca placeholder="🔍 Buscar vereador">
@@ -1517,7 +1521,15 @@ const VENC_SGP_LISTA = [
 const kPad = p => String(p||"").toUpperCase().replace(/[^A-Z0-9]/g,"");
 const VENC_SGP = Object.fromEntries(VENC_SGP_LISTA.map(([p,v])=>[kPad(p),v]));
 const padraoOficial = p => (VENC_SGP_LISTA.find(([x])=>kPad(x)===kPad(p))||[String(p||"").toUpperCase()])[0];
-const valorSGP = p => VENC_SGP[kPad(p)] || 0;
+/* Reajustes percentuais (GAB.reajustes): cada um vale a partir do seu mês de início (r.inicio = "AAAA-MM").
+   Os valores de um mês usam só os reajustes que já valiam nele. Sem mês informado, vale o mês acompanhado no painel. */
+const inicioReaj = r => r.inicio || String(r.data||"").slice(0,7);
+const ymPainel = () => { try { return gabMes(); } catch(e) { return mesAtual(); } };
+const fatorReajuste = ym => { ym = ym || ymPainel(); return (GAB.reajustes||[]).reduce((f,r)=>inicioReaj(r)<=ym ? f*(1+(Number(r.pct)||0)/100) : f, 1); };
+const fatorTotal = () => (GAB.reajustes||[]).reduce((f,r)=>f*(1+(Number(r.pct)||0)/100),1);
+const valorSGP = (p, ym) => (VENC_SGP[kPad(p)] || 0) * fatorReajuste(ym);
+/* verbaMes() guarda a verba com TODOS os reajustes; a de cada mês tira os que ainda não valiam */
+const verbaMes = ym => GAB.verba * fatorReajuste(ym) / fatorTotal();
 const moeda = v => v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 const escG = s => String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
@@ -1525,7 +1537,8 @@ const GAB = (()=>{
   let d=null; try{ d=JSON.parse(localStorage.getItem(CHAVE_GAB)); }catch(e){}
   if(!d || typeof d!=="object") d={};
   return { verba: Number(d.verba)>0 ? Number(d.verba) : VERBA_GAB_PADRAO, lista: (d.lista && typeof d.lista==="object") ? d.lista : {}, saidas: Array.isArray(d.saidas) ? d.saidas : [], entradas: Array.isArray(d.entradas) ? d.entradas : [],
-    subs: (d.subs && typeof d.subs==="object") ? d.subs : {}, hist: Array.isArray(d.hist) ? d.hist : [] };
+    subs: (d.subs && typeof d.subs==="object") ? d.subs : {}, hist: Array.isArray(d.hist) ? d.hist : [],
+    reajustes: Array.isArray(d.reajustes) ? d.reajustes : [] };
 })();
 function salvarGab(){ try{ localStorage.setItem(CHAVE_GAB,JSON.stringify(GAB)); }catch(e){} }
 const chaveSaida = (k,nome,pad) => k+"|"+_min(nome)+"|"+kPad(pad);
@@ -1648,8 +1661,8 @@ function projetarGabinetes(s){
     const fica=g.base.filter(s=>!s._sai);
     g.qtd=fica.length+g.entra.length;
     g.usado=fica.concat(g.entra).reduce((t,s)=>t+valorSGP(s.padrao),0);
-    g.saldo=GAB.verba-g.usado;
-    g.estouroVerba=g.usado>GAB.verba+0.004; g.estouroVagas=g.qtd>VAGAS_GAB;
+    g.saldo=verbaMes()-g.usado;
+    g.estouroVerba=g.usado>verbaMes()+0.004; g.estouroVagas=g.qtd>VAGAS_GAB;
     g.mov=g.entra.length+g.sai.length+g.substNovo.length+g.subSai.length;
     /* substitutos que constam hoje (gravados) + os da folha ainda não efetivados */
     g.subsAtivos=subsGab(g.k).filter(sb=>!sb.fim && !g.subSai.some(z=>z.sb===sb))
@@ -1661,7 +1674,7 @@ function projetarGabinetes(s){
   itens.filter(x=>x.tipo==="nom" && x.g).forEach(x=>{
     const g=x.g, c=corrido[g.k]=corrido[g.k]||{qtd:g.qtd-g.entra.length, usado:g.usado-g.entra.reduce((t,s)=>t+valorSGP(s.padrao),0)};
     c.qtd++; c.usado+=valorSGP(x.n.padrao);
-    const sal=GAB.verba-c.usado, pb=[];
+    const sal=verbaMes()-c.usado, pb=[];
     if(!valorSGP(x.n.padrao)) pb.push("padrão sem valor na tabela");
     if(sal< -0.004) pb.push(`verba ultrapassada em ${moeda(-sal)}`);
     if(c.qtd>VAGAS_GAB) pb.push(`${c.qtd} servidores (limite ${VAGAS_GAB})`);
@@ -1690,7 +1703,8 @@ function projetarGabinetes(s){
 /* ---- menu lateral ---- */
 const gabEl=document.querySelector("[data-gabs]");
 const gabAbertos=new Set(); let gabUltimo=null, gabAssin="";
-const PAD_OPTS=`<option value="">Padrão</option>`+Object.entries(SGP).map(([g,l])=>`<optgroup label="${g}">${l.map(v=>`<option value="${v}">${v} — ${moeda(valorSGP(v))}</option>`).join("")}</optgroup>`).join("");
+const montarPadOpts=()=>`<option value="">Padrão</option>`+Object.entries(SGP).map(([g,l])=>`<optgroup label="${g}">${l.map(v=>`<option value="${v}">${v} — ${moeda(valorSGP(v))}</option>`).join("")}</optgroup>`).join("");
+let PAD_OPTS=montarPadOpts(), padOptsChave="";
 function gabAbrirFechar(abrir){
   gabEl.classList.toggle("fechado",!abrir); document.body.classList.toggle("gabs-aberto",abrir);
   try{ localStorage.setItem("portarias-gabs-fechado",abrir?"0":"1"); }catch(e){}
@@ -1730,6 +1744,7 @@ function gabEstrutura(){
 }
 function gabDesenhar(P){
   const assin=VEREADORES.map(v=>v.nome).join("|");
+  const kp=ymPainel()+"|"+fatorReajuste(); if(kp!==padOptsChave){ padOptsChave=kp; PAD_OPTS=montarPadOpts(); gabAssin=""; }
   if(assin!==gabAssin){ gabAssin=assin; gabEstrutura(); }
   const filtro=_min(gabEl.querySelector("[data-gabbusca]").value);
   let nVerba=0, nVagas=0, nMov=0;
@@ -1752,7 +1767,7 @@ function gabDesenhar(P){
     sEl.innerHTML=g.estouroVerba?`<small>ultrapassou</small> ${moeda(-g.saldo)}`:`<small>disponível</small> ${moeda(g.saldo)}`;
     sEl.classList.toggle("ruim",g.estouroVerba);
     const usadoBase=g.base.filter(s=>!s._sai).reduce((t,s)=>t+valorSGP(s.padrao),0);
-    const pc=v=>Math.max(0,Math.min(100,v/GAB.verba*100));
+    const pc=v=>Math.max(0,Math.min(100,v/verbaMes()*100));
     it.querySelector("[data-ubase]").style.width=pc(usadoBase)+"%";
     it.querySelector("[data-umov]").style.width=Math.max(0,pc(g.usado)-pc(usadoBase))+"%";
     it.querySelector("[data-chips]").innerHTML=
@@ -1781,7 +1796,7 @@ function gabDesenhar(P){
       + g.entra.map(s=>linha(s,"ent","","folha")).join("")
       + g.semCad.map(s=>`<div class="gab-ln nota-ln"><span class="n">${escG(s.nome)} <small>exonerado na folha — não está na lista</small></span></div>`).join("");
     if(!h) h=`<div class="gab-vazio">Nenhum servidor cadastrado neste gabinete.</div>`;
-    h+=`<div class="gab-tot"><span>Utilizado <b>${moeda(g.usado)}</b></span><span>Verba <b>${moeda(GAB.verba)}</b></span></div>`;
+    h+=`<div class="gab-tot"><span>Utilizado <b>${moeda(g.usado)}</b></span><span>Verba <b>${moeda(verbaMes())}</b></span></div>`;
     it.querySelector("[data-tab]").innerHTML=h;
     /* substitutos na lista do mês escolhido */
     const subsM=subsGab(g.k).filter(x=>subNoMes(x,ym)), hoje=hojeISO();
@@ -1806,7 +1821,8 @@ function gabDesenhar(P){
   { const ym=gabMes(), n=GAB.hist.filter(h=>h.data.slice(0,7)===ym).length;
     gabEl.querySelector(".gabs-mes").classList.toggle("anterior", ym<mesAtual());
     gabEl.querySelector("[data-gabmesres]").textContent=`${n} movimentaç${n===1?"ão":"ões"} em ${nomeMes(ym)}`; }
-  gabEl.querySelector("[data-gabverba]").textContent=moeda(GAB.verba);
+  gabEl.querySelector("[data-gabverba]").textContent=moeda(verbaMes());
+  gabMostrarReajustes();
 }
 let gabRedesenhar=()=>{};
 let gabEdit=null;
@@ -1903,8 +1919,8 @@ function gabIncluir(it){
   if(l.some(s=>_min(s.nome)===_min(nome) && kPad(s.padrao)===kPad(pad))) return erro("Este servidor já está na lista com esse padrão.");
   l.push({nome, mat, padrao:padraoOficial(pad)}); registrarMov(it.dataset.k,"inclusao-manual",{nome, mat, padrao:padraoOficial(pad)}); salvarGab();
   const usado=l.reduce((t,s)=>t+valorSGP(s.padrao),0);
-  msg.textContent=usado>GAB.verba?`Incluído — atenção: a lista passa da verba em ${moeda(usado-GAB.verba)}.`:`${nome} incluído(a).`;
-  msg.className="gab-msg"+(usado>GAB.verba?" ruim":" ok");
+  msg.textContent=usado>verbaMes()?`Incluído — atenção: a lista passa da verba em ${moeda(usado-verbaMes())}.`:`${nome} incluído(a).`;
+  msg.className="gab-msg"+(usado>verbaMes()?" ruim":" ok");
   it.querySelector("[data-anome]").value=""; it.querySelector("[data-amat]").value=""; it.querySelector("[data-apad]").value="";
   gabRedesenhar(); it.querySelector("[data-anome]").focus();
 }
@@ -1933,15 +1949,50 @@ gabEl.querySelector("[data-gabefetivar]").addEventListener("click",()=>{
 });
 /* verba por gabinete */
 gabEl.querySelector("[data-gabverbaed]").addEventListener("click",()=>{
-  const t=prompt("Verba de gabinete disponível para cada gabinete (R$):", GAB.verba.toLocaleString("pt-BR",{minimumFractionDigits:2}));
+  const ym=gabMes();
+  const t=prompt(`Verba de gabinete disponível para cada gabinete em ${nomeMes(ym)} (R$):`, verbaMes(ym).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}));
   if(t==null) return;
   let x=t.trim().replace(/[R$\s]/g,""); if(x.includes(",")) x=x.replace(/\./g,"").replace(",",".");
   const v=Number(x); if(!(v>0)) return alert("Valor inválido.");
-  GAB.verba=v; salvarGab(); gabRedesenhar();
+  GAB.verba=v*fatorTotal()/fatorReajuste(ym); salvarGab(); gabRedesenhar();
+});
+/* reajuste percentual: vale a partir de um mês, na verba e no valor de todos os padrões SGP */
+function pctTxt(v){ return (v>0?"+":"")+v.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})+"%"; }
+const mmaa = ym => ym.slice(5,7)+"/"+ym.slice(0,4);
+function gabMostrarReajustes(){
+  const box=gabEl.querySelector("[data-gabreajinfo]"), r=GAB.reajustes||[], ym=ymPainel();
+  box.hidden=!r.length; if(!r.length) return;
+  const vale=r.filter(x=>inicioReaj(x)<=ym);
+  gabEl.querySelector("[data-gabreajtxt]").textContent="Reajustes: "+r.map(x=>pctTxt(Number(x.pct))+" a partir de "+mmaa(inicioReaj(x))+(inicioReaj(x)>ym?" (ainda não vale neste mês)":"")).join(" · ")
+    +(vale.length>1?" · acumulado neste mês "+pctTxt((fatorReajuste(ym)-1)*100):"");
+}
+function gabAposReajuste(){ salvarGab(); gabRedesenhar(); gabMostrarReajustes(); }
+gabEl.querySelector("[data-gabreaj]").addEventListener("click",()=>{
+  const t=prompt("Reajuste em percentual (ex.: 10 para 10%, 2,5 para 2,5%, -3 para redução de 3%).\nSerá aplicado na verba de todos os gabinetes e no valor de todos os padrões:","");
+  if(t==null||!t.trim()) return;
+  const pct=Number(t.trim().replace("%","").replace(/\s/g,"").replace(",","."));
+  if(!isFinite(pct) || pct===0 || pct<=-50 || pct>100) return alert("Percentual inválido. Use um número entre -50 e 100, diferente de zero.");
+  const m=prompt("A partir de qual mês o reajuste vale? (mm/aaaa)\nOs meses anteriores continuam com os valores antigos, inclusive nos relatórios.", mmaa(mesAtual()));
+  if(m==null) return;
+  const mm=m.trim().match(/^(\d{1,2})\s*[\/\-.]\s*(\d{4})$/);
+  if(!mm || +mm[1]<1 || +mm[1]>12) return alert("Mês inválido. Use o formato mm/aaaa, por exemplo 01/2027.");
+  const inicio=`${mm[2]}-${String(mm[1]).padStart(2,"0")}`;
+  const f=1+pct/100, ex=["SGP-1 40H","SGP-10 40H"].map(p=>`   ${p}: ${moeda(valorSGP(p,inicio))} → ${moeda(valorSGP(p,inicio)*f)}`).join("\n");
+  if(!confirm(`Reajuste de ${pctTxt(pct)} a partir de ${nomeMes(inicio)}:\n\n• Verba por gabinete: ${moeda(verbaMes(inicio))} → ${moeda(verbaMes(inicio)*f)}\n• Todos os ${VENC_SGP_LISTA.length} padrões, por exemplo:\n${ex}\n\nOs meses anteriores a ${nomeMes(inicio)} continuam com os valores antigos. Confirmar?`)) return;
+  const antes=GAB.verba; GAB.verba=GAB.verba*f;
+  GAB.reajustes.push({pct, inicio, data:hojeISO(), verbaAntes:antes, verbaDepois:GAB.verba});
+  gabAposReajuste();
+});
+gabEl.querySelector("[data-gabreajdesf]").addEventListener("click",()=>{
+  const r=GAB.reajustes[GAB.reajustes.length-1]; if(!r) return;
+  if(!confirm(`Desfazer o reajuste de ${pctTxt(Number(r.pct))} a partir de ${nomeMes(inicioReaj(r))} (incluído em ${dtBR(r.data)})?\n\nA verba e o valor dos padrões voltam a ser os de antes desse reajuste.`)) return;
+  GAB.verba = GAB.verba/(1+Number(r.pct)/100);
+  GAB.reajustes.pop();
+  gabAposReajuste();
 });
 /* backup: salva as listas dos gabinetes; abre esse backup ou o backup da Calculadora de Verbas */
 gabEl.querySelector("[data-gabsalvar]").addEventListener("click",()=>{
-  const blob=new Blob([JSON.stringify({app:"gerador-portarias-gabinetes", salvoEm:new Date().toISOString(), verba:GAB.verba, gabinetes:VEREADORES.map(v=>({vereador:v.nome, servidores:listaGab(_min(v.nome)).map(s=>({nome:s.nome, matricula:s.mat, padrao:s.padrao}))})), subs:GAB.subs, hist:GAB.hist},null,2)],{type:"application/json"});
+  const blob=new Blob([JSON.stringify({app:"gerador-portarias-gabinetes", salvoEm:new Date().toISOString(), verba:GAB.verba, gabinetes:VEREADORES.map(v=>({vereador:v.nome, servidores:listaGab(_min(v.nome)).map(s=>({nome:s.nome, matricula:s.mat, padrao:s.padrao}))})), subs:GAB.subs, hist:GAB.hist, reajustes:GAB.reajustes},null,2)],{type:"application/json"});
   const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
   const d=new Date(); a.download=`GABINETES - ${String(d.getDate()).padStart(2,"0")}-${String(d.getMonth()+1).padStart(2,"0")}-${d.getFullYear()}.json`;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),1500);
@@ -1958,6 +2009,7 @@ gabArq.addEventListener("change",()=>{
       if(!confirm("Substituir as listas de todos os gabinetes pelas do backup?")) return;
       GAB.lista={}; if(Number(d.verba)>0) GAB.verba=Number(d.verba);
       if(d.subs && typeof d.subs==="object") GAB.subs=d.subs; if(Array.isArray(d.hist)) GAB.hist=d.hist;
+      GAB.reajustes=Array.isArray(d.reajustes)?d.reajustes:[];
       d.gabinetes.forEach(g=>{ const v=acharVer(g.vereador)||{nome:g.vereador}; GAB.lista[_min(v.nome)]=(g.servidores||[]).map(s=>({nome:up(s.nome), mat:String(s.matricula||"").replace(/\D/g,""), padrao:padraoOficial(s.padrao)})); });
       salvarGab(); gabRedesenhar(); return;
     }
@@ -1988,8 +2040,8 @@ function imprimirRelatorio(so){
       const usado=base.reduce((t,x)=>t+valorSGP(x.padrao),0);
       const substVis=subsGab(k).filter(x=>subNoMes(x,ym) && (!x.fim||x.fim>=fimM) && (!subAuto(x)||!x.ate||x.ate>=fimM))
         .map(x=>({nome:x.nome, titular:_min(x.titular), titNome:x.titular, mat:x.mat, tmat:x.tmat, de:dtBR(x.de), ate:dtBR(x.ate)}));
-      Q[k]={k, nome:v.nome, base, entra:[], sai:[], semCad:[], substVis, usado, qtd:base.length, saldo:GAB.verba-usado,
-        estouroVerba:usado>GAB.verba+0.004, estouroVagas:base.length>VAGAS_GAB, mov:0};
+      Q[k]={k, nome:v.nome, base, entra:[], sai:[], semCad:[], substVis, usado, qtd:base.length, saldo:verbaMes()-usado,
+        estouroVerba:usado>verbaMes()+0.004, estouroVagas:base.length>VAGAS_GAB, mov:0};
     });
     P=Q;
   }
@@ -2002,8 +2054,8 @@ function imprimirRelatorio(so){
   const refMes=passado?`situação em ${dtBR(fimM)}, último dia do mês`:`situação atual do mês`;
   const cab=`<header><img src="${LOGO}" alt=""><div class="t"><b>Câmara Municipal de Vitória</b><span>Estado do Espírito Santo</span></div></header>`;
   const avisoFolha=tem?`<div class="aviso">Este relatório inclui as nomeações e exonerações que estão na folha do gerador e ainda não foram efetivadas ${ind?"neste gabinete":"nos gabinetes"}.</div>`:"";
-  const totUs=gs.reduce((t,g)=>t+g.usado,0), totSrv=gs.reduce((t,g)=>t+g.qtd,0), totVerba=GAB.verba*gs.length;
-  const resumo=gs.map((g,i)=>`<tr class="${g.estouroVerba||g.estouroVagas?"ruim":""}"><td>${i+1}</td><td>${escG(g.nome)}</td><td class="c${g.estouroVagas?" vermelho":""}">${g.qtd}/${VAGAS_GAB}</td><td class="r">${moeda(GAB.verba)}</td><td class="r${g.estouroVerba?" vermelho":""}">${moeda(g.usado)}</td><td class="r b${g.estouroVerba?" vermelho":""}">${moeda(g.saldo)}</td></tr>`).join("");
+  const totUs=gs.reduce((t,g)=>t+g.usado,0), totSrv=gs.reduce((t,g)=>t+g.qtd,0), totVerba=verbaMes()*gs.length;
+  const resumo=gs.map((g,i)=>`<tr class="${g.estouroVerba||g.estouroVagas?"ruim":""}"><td>${i+1}</td><td>${escG(g.nome)}</td><td class="c${g.estouroVagas?" vermelho":""}">${g.qtd}/${VAGAS_GAB}</td><td class="r">${moeda(verbaMes())}</td><td class="r${g.estouroVerba?" vermelho":""}">${moeda(g.usado)}</td><td class="r b${g.estouroVerba?" vermelho":""}">${moeda(g.saldo)}</td></tr>`).join("");
   const secoes=gs.map(g=>{
     const fica=g.base.filter(s=>!s._sai).map(s=>({...s,orig:""})).concat(g.entra.map(s=>({...s,orig:"nomeação na folha"})));
     const subDe=s=>!s.orig && g.substVis.find(x=>x.titular && x.titular===_min(s.nome));
@@ -2016,7 +2068,7 @@ function imprimirRelatorio(so){
       <table class="srv"><thead><tr><th>#</th><th>Matrícula</th><th>Nome do servidor</th><th>Cargo</th><th>Padrão</th><th>Vencimento</th></tr></thead><tbody>${linhas}</tbody></table>
       ${saem}
       ${g.substVis.length?`<p class="obs sb">Nomeado(s) em substituição neste gabinete (o titular continua na lista e a verba não muda): ${g.substVis.map(x=>`${escG(x.nome)}${x.mat?` (mat. ${escG(x.mat)})`:""} substitui ${escG(x.titNome)||"—"}${x.tmat?` (mat. ${escG(x.tmat)})`:""}${x.de?` de ${escG(x.de)}${x.ate?` a ${escG(x.ate)}`:""}`:""}`).join("; ")}.</p>`:""}
-      <div class="tot"><div><span>Verba disponível</span><b>${moeda(GAB.verba)}</b></div><div><span>Verba utilizada</span><b>${moeda(g.usado)}</b></div><div class="${g.estouroVerba?"neg":"pos"}"><span>Saldo restante</span><b>${moeda(g.saldo)}</b></div><div class="${g.estouroVagas?"neg":""}"><span>Servidores${g.estouroVagas?" — acima do limite":""}</span><b>${g.qtd}/${VAGAS_GAB}</b></div></div>
+      <div class="tot"><div><span>Verba disponível</span><b>${moeda(verbaMes())}</b></div><div><span>Verba utilizada</span><b>${moeda(g.usado)}</b></div><div class="${g.estouroVerba?"neg":"pos"}"><span>Saldo restante</span><b>${moeda(g.saldo)}</b></div><div class="${g.estouroVagas?"neg":""}"><span>Servidores${g.estouroVagas?" — acima do limite":""}</span><b>${g.qtd}/${VAGAS_GAB}</b></div></div>
     </section>`;
   }).join("");
   const doc=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><title>${ind?"Relatório de verba - Gabinete "+escG(gs[0].nome)+" - "+MesT:"Relatório de verbas dos gabinetes - "+MesT}</title><style>
@@ -2048,7 +2100,7 @@ function imprimirRelatorio(so){
   ${ind?`${cab}<h1>Relatório de verba de gabinete — ${MesT}</h1><p class="sub">Mês de referência: ${MesT} (${refMes}) · emitido em ${quando} · limite de ${VAGAS_GAB} servidores por gabinete</p>${avisoFolha}`:`<div class="resumo">
     ${cab}
     <h1>Relatório de verbas dos gabinetes parlamentares — ${MesT}</h1>
-    <p class="sub">Mês de referência: ${MesT} (${refMes}) · emitido em ${quando} · verba por gabinete: ${moeda(GAB.verba)} · limite de ${VAGAS_GAB} servidores por gabinete</p>
+    <p class="sub">Mês de referência: ${MesT} (${refMes}) · emitido em ${quando} · verba por gabinete: ${moeda(verbaMes())} · limite de ${VAGAS_GAB} servidores por gabinete</p>
     ${avisoFolha}
     <table><thead><tr><th class="c">#</th><th>Vereador(a)</th><th class="c">Servidores</th><th>Verba disponível</th><th>Verba utilizada</th><th>Saldo restante</th></tr></thead>
     <tbody>${resumo}</tbody>
@@ -2107,7 +2159,7 @@ function imprimirRelatorioMes(so){
     <table><thead><tr><th class="c">#</th><th class="c">Matrícula</th><th>Nome do servidor</th><th class="c">Padrão</th><th>Vencimento</th></tr></thead><tbody>${
       g.lista.map((x,i)=>{ const sb=g.subs.find(z=>_min(z.titular)===_min(x.nome) && (!z.fim||z.fim>=fim) && (!subAuto(z)||!z.ate||z.ate>=fim)); return `<tr><td class="c">${i+1}</td><td class="c">${escG(x.mat)||"—"}</td><td>${escG(x.nome)}${sb?` <i>(substituído por ${escG(sb.nome)}${sb.mat?`, mat. ${escG(sb.mat)}`:""})</i>`:""}</td><td class="c">${escG(x.padrao)}</td><td class="r">${moeda(valorSGP(x.padrao))}</td></tr>`; }).join("")
       || `<tr><td colspan="5" class="vazio">Nenhum servidor na lista.</td></tr>`}</tbody>
-      <tfoot><tr><td colspan="3">${g.lista.length}/${VAGAS_GAB} servidores · saldo ${moeda(GAB.verba-g.usado)}</td><td class="c">Total</td><td class="r">${moeda(g.usado)}</td></tr></tfoot></table>
+      <tfoot><tr><td colspan="3">${g.lista.length}/${VAGAS_GAB} servidores · saldo ${moeda(verbaMes()-g.usado)}</td><td class="c">Total</td><td class="r">${moeda(g.usado)}</td></tr></tfoot></table>
   </section>`).join("") || `<p class="vazio">Nenhum gabinete teve movimentação ou substituto em ${nomeMes(ym)}.</p>`;
   const doc=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><title>${ind?`Movimentações de ${MesT} - Gabinete ${escG(dados[0].nome)}`:`Movimentações dos gabinetes - ${MesT}`}</title><style>
     @page{size:A4;margin:14mm 12mm 14mm}
