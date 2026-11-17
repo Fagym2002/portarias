@@ -252,7 +252,10 @@
   body{transition:padding-left .3s}
   .gabs-aba{position:absolute;left:100%;top:120px;writing-mode:vertical-rl;transform:rotate(180deg);border:0;border-radius:0 10px 10px 0;background:var(--accent);color:#fff;font:700 13px/1 inherit;letter-spacing:.06em;padding:14px 9px;cursor:pointer;box-shadow:3px 3px 12px var(--shadow);display:none}
   .gabs.fechado .gabs-aba{display:block}
-  .gabs-aba.alerta{background:#d23434;animation:abaPisca 1.6s infinite}
+  /* a aba tem a mesma cor do topo do seu menu; o alerta não troca a cor: aparece como anel e bolinha vermelha piscando */
+  .gabs-aba{background:linear-gradient(0deg,var(--top),var(--top2));color:var(--topink);border:1px solid rgba(255,255,255,.45)!important;border-left:0!important}
+  .gabs-aba.alerta{animation:abaPisca 1.6s infinite;outline:2px solid #d23434;outline-offset:-2px}
+  .gabs-aba.alerta::after{content:"";position:absolute;left:50%;bottom:-6px;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:#d23434;border:2px solid #fff;animation:chipPisca 1.4s infinite}
   @keyframes abaPisca{50%{box-shadow:0 0 0 6px rgba(210,52,52,.25),3px 3px 12px var(--shadow)}}
   .gabs-top{padding:16px 16px 12px;background:linear-gradient(135deg,var(--top),var(--top2));color:var(--topink)}
   .gabs-top .l1{display:flex;align-items:center;justify-content:space-between;gap:8px}
@@ -385,10 +388,9 @@
   [data-tema="lavanda"]{--estr1:#a61e5a;--estr2:#e64980}
   [data-tema="noturno"]{--estr1:#0d3a40;--estr2:#1a6b73}
   [data-tema="grafite"]{--estr1:#4a4a4a;--estr2:#7a7a7a}
-  .gabs.estr .gabs-aba{top:300px;background:var(--estr1)}
+  .gabs.estr .gabs-aba{top:300px;background:linear-gradient(0deg,var(--estr1),var(--estr2));color:#fff}
   .gabs.estr .gabs-top{background:linear-gradient(135deg,var(--estr1),var(--estr2))}
   body.gabs-aberto .gabs.fechado .gabs-aba{left:calc(100% + 340px)}   /* a aba do painel fechado fica ao lado do painel aberto */
-  .gabs.estr .gabs-aba.alerta{background:#d23434}
   .gabs.estr .gabs-top .l3 b{font-size:14px}
   .gab-ln.est-ln{grid-template-columns:1fr auto auto}
   .est-desc{display:block;font-weight:600;font-size:11px;color:var(--muted)}
