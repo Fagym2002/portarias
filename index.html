@@ -375,6 +375,33 @@
   .vb-info.ruim{background:#d23434;color:#fff;border-color:#d23434;animation:chipPisca 1.4s infinite}
   [data-tema="noturno"] .vb-info:not(.ruim){color:#69db7c}
   [data-tema="noturno"] .chip.ent,[data-tema="noturno"] .gab-ln .tag{color:#7fb2ff}
+  /* ===== estrutura administrativa (mesmo visual do painel dos gabinetes) ===== */
+  /* cor própria do menu Estrutura em cada tema (diferente da cor do menu Gabinetes) */
+  :root,[data-tema="camara"]{--estr1:#0f6b3e;--estr2:#2f8f62}
+  [data-tema="institucional"]{--estr1:#8e1f1f;--estr2:#c62828}
+  [data-tema="esmeralda"]{--estr1:#a83a0c;--estr2:#d9480f}
+  [data-tema="vinho"]{--estr1:#7d5a12;--estr2:#b8892b}
+  [data-tema="por-do-sol"]{--estr1:#4b2fb8;--estr2:#7048e8}
+  [data-tema="lavanda"]{--estr1:#a61e5a;--estr2:#e64980}
+  [data-tema="noturno"]{--estr1:#0d3a40;--estr2:#1a6b73}
+  [data-tema="grafite"]{--estr1:#4a4a4a;--estr2:#7a7a7a}
+  .gabs.estr .gabs-aba{top:300px;background:var(--estr1)}
+  .gabs.estr .gabs-top{background:linear-gradient(135deg,var(--estr1),var(--estr2))}
+  body.gabs-aberto .gabs.fechado .gabs-aba{left:calc(100% + 340px)}   /* a aba do painel fechado fica ao lado do painel aberto */
+  .gabs.estr .gabs-aba.alerta{background:#d23434}
+  .gabs.estr .gabs-top .l3 b{font-size:14px}
+  .gab-ln.est-ln{grid-template-columns:1fr auto auto}
+  .est-desc{display:block;font-weight:600;font-size:11px;color:var(--muted)}
+  .chip.est-val{background:color-mix(in srgb,var(--estr2) 16%,transparent);color:var(--estr1)}
+  [data-tema="noturno"] .chip.est-val{color:#7fd6dd}
+  .est-nota{font-size:11px;color:var(--muted);margin:0 2px 6px;line-height:1.35}
+  .gabs.estr .gab-add{grid-template-columns:96px 1fr}
+  .gabs.estr .gab-add [data-esanome]{grid-column:1/3}
+  .gabs.estr .gab-add [data-esacargo]{grid-column:2/3}
+  .gabs.estr .gab-add>button{grid-column:1/3}
+  .gabs.estr .gab-barra u{background:var(--estr2)}
+  .gabs.estr .gab-it.estouro .gab-barra u{background:#d23434}
+  .gabs.estr .gab-saldo{color:var(--ink)}
   @media print{.gabs{display:none}}
 
   .folhas .v[data-alvo]{cursor:pointer;transition:background .2s,box-shadow .2s}
@@ -471,7 +498,7 @@
   <div class="gabs-top">
     <div class="l1"><h2>🏛 Verbas dos gabinetes</h2><button type="button" class="fx" data-gabfechar title="Recolher">‹</button></div>
     <div class="l2" data-gabresumo></div>
-    <div class="l3">Verba por gabinete: <b data-gabverba></b><button type="button" data-gabverbaed title="Alterar a verba">alterar</button><button type="button" data-gabreaj title="Aplicar um reajuste percentual na verba e no valor de todos os padrões">reajuste %</button></div>
+    <div class="l3">Verba por gabinete: <b data-gabverba></b><button type="button" data-gabverbaed title="Alterar a verba">alterar</button><button type="button" data-gabreaj title="Reajuste percentual geral: verba dos gabinetes, padrões SGP e cargos PC da estrutura administrativa">reajuste % geral</button></div>
     <div class="l4" data-gabreajinfo hidden><span data-gabreajtxt></span><button type="button" data-gabreajdesf title="Desfazer o último reajuste">desfazer último</button></div>
   </div>
   <div class="gabs-mes"><label>🗓 Mês acompanhado <input type="month" data-gabmes></label><span data-gabmesres></span></div>
@@ -483,6 +510,24 @@
     <button type="button" data-gabsalvar>💾 Salvar backup</button>
     <button type="button" data-gababrir title="Aceita também o backup da Calculadora de Verbas">📂 Abrir backup</button>
     <input type="file" accept=".json,application/json" data-gabarq hidden>
+  </div>
+</aside>
+<aside class="gabs estr fechado" data-estr aria-label="Estrutura administrativa">
+  <button type="button" class="gabs-aba" data-estaba>🏢 ESTRUTURA</button>
+  <div class="gabs-top">
+    <div class="l1"><h2>🏢 Estrutura administrativa</h2><button type="button" class="fx" data-estfechar title="Recolher">‹</button></div>
+    <div class="l2" data-estresumo></div>
+    <div class="l3">Custo mensal dos ocupados: <b data-estcusto></b><button type="button" data-estreaj title="Reajuste percentual geral: verba dos gabinetes, padrões SGP e cargos PC da estrutura administrativa">reajuste % geral</button></div>
+    <div class="l4" data-estreajinfo hidden><span data-estreajtxt></span><button type="button" data-estreajdesf title="Desfazer o último reajuste">desfazer último</button></div>
+  </div>
+  <div class="gabs-mes"><label>🗓 Mês acompanhado <input type="month" data-estmes></label><span data-estmesres></span></div>
+  <input class="gabs-busca" data-estbusca placeholder="🔍 Buscar nome, matrícula, cargo ou lotação">
+  <div class="gabs-lista" data-estlista></div>
+  <div class="gabs-rod">
+    <button type="button" class="imp" data-estimprimir title="Cargos, ocupantes e valores no mês escolhido">🖨 Relatório da estrutura administrativa</button>
+    <button type="button" data-estsalvar>💾 Salvar lista</button>
+    <button type="button" data-estabrir>📂 Abrir lista</button>
+    <input type="file" accept=".json,application/json,text/plain,.txt" data-estarq hidden>
   </div>
 </aside>
 <main id="panels"></main>
@@ -1966,9 +2011,10 @@ function gabMostrarReajustes(){
   gabEl.querySelector("[data-gabreajtxt]").textContent="Reajustes: "+r.map(x=>pctTxt(Number(x.pct))+" a partir de "+mmaa(inicioReaj(x))+(inicioReaj(x)>ym?" (ainda não vale neste mês)":"")).join(" · ")
     +(vale.length>1?" · acumulado neste mês "+pctTxt((fatorReajuste(ym)-1)*100):"");
 }
-function gabAposReajuste(){ salvarGab(); gabRedesenhar(); gabMostrarReajustes(); }
-gabEl.querySelector("[data-gabreaj]").addEventListener("click",()=>{
-  const t=prompt("Reajuste em percentual (ex.: 10 para 10%, 2,5 para 2,5%, -3 para redução de 3%).\nSerá aplicado na verba de todos os gabinetes e no valor de todos os padrões:","");
+function gabAposReajuste(){ salvarGab(); gabRedesenhar(); gabMostrarReajustes(); if(typeof estDesenhar==="function") estDesenhar(); }
+/* reajuste percentual GERAL: verba dos gabinetes, padrões SGP e cargos PC da estrutura administrativa */
+function reajusteGeral(){
+  const t=prompt("Reajuste percentual GERAL (ex.: 10 para 10%, 2,5 para 2,5%, -3 para redução de 3%).\nVale para todos os valores: verba dos gabinetes, padrões SGP dos gabinetes e cargos PC da estrutura administrativa:","");
   if(t==null||!t.trim()) return;
   const pct=Number(t.trim().replace("%","").replace(/\s/g,"").replace(",","."));
   if(!isFinite(pct) || pct===0 || pct<=-50 || pct>100) return alert("Percentual inválido. Use um número entre -50 e 100, diferente de zero.");
@@ -1978,18 +2024,23 @@ gabEl.querySelector("[data-gabreaj]").addEventListener("click",()=>{
   if(!mm || +mm[1]<1 || +mm[1]>12) return alert("Mês inválido. Use o formato mm/aaaa, por exemplo 01/2027.");
   const inicio=`${mm[2]}-${String(mm[1]).padStart(2,"0")}`;
   const f=1+pct/100, ex=["SGP-1 40H","SGP-10 40H"].map(p=>`   ${p}: ${moeda(valorSGP(p,inicio))} → ${moeda(valorSGP(p,inicio)*f)}`).join("\n");
-  if(!confirm(`Reajuste de ${pctTxt(pct)} a partir de ${nomeMes(inicio)}:\n\n• Verba por gabinete: ${moeda(verbaMes(inicio))} → ${moeda(verbaMes(inicio)*f)}\n• Todos os ${VENC_SGP_LISTA.length} padrões, por exemplo:\n${ex}\n\nOs meses anteriores a ${nomeMes(inicio)} continuam com os valores antigos. Confirmar?`)) return;
+  const vaiPC=inicio>EST_VIGENCIA;
+  const exPC=vaiPC ? "• Todos os 6 cargos PC da estrutura administrativa, por exemplo:\n"+["PC-S","PC-T","PC-AL2"].map(p=>`   ${p}: ${moeda(valorPC(p,inicio))} → ${moeda(valorPC(p,inicio)*f)}`).join("\n")
+    : "• Cargos PC da estrutura administrativa: NÃO mudam, porque a tabela de 01/04/2026 já está aplicada. Para os PC, use um mês a partir de 05/2026.";
+  if(!confirm(`Reajuste geral de ${pctTxt(pct)} a partir de ${nomeMes(inicio)}:\n\n• Verba por gabinete: ${moeda(verbaMes(inicio))} → ${moeda(verbaMes(inicio)*f)}\n• Todos os ${VENC_SGP_LISTA.length} padrões SGP, por exemplo:\n${ex}\n${exPC}\n\nOs meses anteriores a ${nomeMes(inicio)} continuam com os valores antigos. Confirmar?`)) return;
   const antes=GAB.verba; GAB.verba=GAB.verba*f;
   GAB.reajustes.push({pct, inicio, data:hojeISO(), verbaAntes:antes, verbaDepois:GAB.verba});
   gabAposReajuste();
-});
-gabEl.querySelector("[data-gabreajdesf]").addEventListener("click",()=>{
+}
+function desfazerReajuste(){
   const r=GAB.reajustes[GAB.reajustes.length-1]; if(!r) return;
-  if(!confirm(`Desfazer o reajuste de ${pctTxt(Number(r.pct))} a partir de ${nomeMes(inicioReaj(r))} (incluído em ${dtBR(r.data)})?\n\nA verba e o valor dos padrões voltam a ser os de antes desse reajuste.`)) return;
+  if(!confirm(`Desfazer o reajuste geral de ${pctTxt(Number(r.pct))} a partir de ${nomeMes(inicioReaj(r))} (incluído em ${dtBR(r.data)})?\n\nA verba, os padrões SGP e os cargos PC voltam a ser os de antes desse reajuste.`)) return;
   GAB.verba = GAB.verba/(1+Number(r.pct)/100);
   GAB.reajustes.pop();
   gabAposReajuste();
-});
+}
+gabEl.querySelector("[data-gabreaj]").addEventListener("click",reajusteGeral);
+gabEl.querySelector("[data-gabreajdesf]").addEventListener("click",desfazerReajuste);
 /* backup: salva as listas dos gabinetes; abre esse backup ou o backup da Calculadora de Verbas */
 gabEl.querySelector("[data-gabsalvar]").addEventListener("click",()=>{
   const blob=new Blob([JSON.stringify({app:"gerador-portarias-gabinetes", salvoEm:new Date().toISOString(), verba:GAB.verba, gabinetes:VEREADORES.map(v=>({vereador:v.nome, servidores:listaGab(_min(v.nome)).map(s=>({nome:s.nome, matricula:s.mat, padrao:s.padrao}))})), subs:GAB.subs, hist:GAB.hist, reajustes:GAB.reajustes},null,2)],{type:"application/json"});
@@ -2004,6 +2055,7 @@ gabArq.addEventListener("change",()=>{
   const r=new FileReader();
   r.onload=()=>{
     let d; try{ d=JSON.parse(r.result); }catch(e){ return alert("Arquivo inválido."); }
+    if(d && d.tipo==="estrutura-administrativa"){ gabArq.value=""; return estImportar(d, f.name); }
     const acharVer=nome=>{ const m=_min(String(nome||"").replace(/^(gabinete|gab\.?|vereador[a]?|ver\.?)\s+(do|da|de)?\s*(\(a\)\s*)?(vereador[a]?\s*)?/i,"")); return VEREADORES.find(v=>_min(v.nome)===m) || VEREADORES.find(v=>m && (m.includes(_min(v.nome))||_min(v.nome).includes(m))); };
     if(d && d.app==="gerador-portarias-gabinetes" && Array.isArray(d.gabinetes)){
       if(!confirm("Substituir as listas de todos os gabinetes pelas do backup?")) return;
@@ -2805,6 +2857,256 @@ for(const [id,nome,cor] of TEMAS){
 let temaSalvo="camara"; try{ temaSalvo=localStorage.getItem("portaria-tema")||temaSalvo; if(!localStorage.getItem("portaria-tema-camara")){ localStorage.setItem("portaria-tema-camara","1"); if(temaSalvo==="institucional") temaSalvo="camara"; } }catch(e){}
 aplicarTema(TEMAS.some(t=>t[0]===temaSalvo)?temaSalvo:"camara");
 
+
+/* =====================================================================
+   ESTRUTURA ADMINISTRATIVA — cargos comissionados (Resolução nº 2.088/2025)
+   Quantidade de cargos: Anexo II (direção) e Anexo III (assessoramento).
+   Valores: tabela "Vencimento dos Cargos Comissionados – Estrutura
+   Administrativa", com 10% a partir de 01/04/2026.
+   ===================================================================== */
+const EST_VIGENCIA = "2026-04";   /* a partir de abril/2026 vale o "valor total" da tabela */
+const LOTACOES_ANEXO3 = [
+  "Comissão de Constituição, Justiça, Serviço Público, Redação e Fiscalização de Leis",
+  "Comissão de Finanças, Economia, Orçamento, Fiscalização, Controle e Tomada de Contas",
+  "Comissão de Defesa do Consumidor, Direitos Humanos, Cidadania e Acessibilidade",
+  "Comissão de Educação","Comissão de Cultura, Turismo, Esporte e Lazer","Comissão de Saúde e Assistência Social",
+  "Comissão de Meio Ambiente e Bem-estar Animal","Comissão de Políticas Urbanas e Mobilidade","Comissão de Obras e Serviços",
+  "Comissão de Segurança Pública","Comissão de Desenvolvimento Econômico","Comissão de Defesa e Promoção dos Direitos das Mulheres",
+  "Direção Geral – DGE","Arquivo Geral","Biblioteca do Legislativo","Almoxarifado e Patrimônio","Coordenação do Cerimonial",
+  "Diretoria de Processo Legislativo e das Comissões Permanentes","Diretoria de Fiscalização dos Equipamentos Públicos do Município",
+  "Compras","Setor de Licitações e Contratos","Secretaria de Comunicação Social","Diretoria de Infraestrutura e Logística",
+  "Diretoria de Finanças","Diretoria de Tecnologia da Informação – DTI","Departamento de Documentação e Informação – DDI",
+  "Escola do Legislativo","Procuradoria Geral – PGE","Secretaria Geral da Mesa e Consultoria Temática – SGM",
+  "Diretoria de Recursos Humanos e Gestão de Pessoas","Diretoria de Relações Institucionais","Secretaria de Gestão Interna",
+  "Diretoria de Segurança Legislativa","Presidência"
+];
+const EST_PADROES = [
+  {p:"PC-S", desc:"Direção superior", anexo:"Anexo II", vagas:5, base:13131.39, novo:14444.53,
+   cargos:["Diretor Geral","Procurador Geral","Diretor de Secretaria de Comunicação Social","Diretor de Relações Institucionais","Secretário de Gestão Interna"]},
+  {p:"PC-SUB-A", desc:"Subdireção e chefias", anexo:"Anexo II", vagas:4, base:9713.00, novo:10684.30,
+   cargos:["Subdiretor Geral","Subprocurador Geral","Chefia de Gabinete da Presidência","Diretor de Segurança Legislativa"]},
+  {p:"PC-E", desc:"Diretorias", anexo:"Anexo II", vagas:8, base:8079.28, novo:8887.21,
+   cargos:["Diretor de Controle Interno","Diretor de Recursos Humanos e Gestão de Pessoas","Diretor de Infraestrutura e Logística","Diretor de Finanças",
+           "Diretor de Processo Legislativo e das Comissões Permanentes","Diretor de Tecnologia da Informação","Secretário Geral da Mesa e Consultoria Temática",
+           "Diretor de Fiscalização dos Equipamentos Públicos do Município"]},
+  {p:"PC-T", desc:"Assessor Pleno e Coordenador de Comissões", anexo:"Anexo III", vagas:40, base:5596.26, novo:6155.89, cargos:LOTACOES_ANEXO3},
+  {p:"PC-AL1", desc:"Assessor Sênior", anexo:"Anexo III", vagas:31, base:3858.13, novo:4243.94, cargos:LOTACOES_ANEXO3},
+  {p:"PC-AL2", desc:"Assessor Júnior", anexo:"Anexo III", vagas:37, base:2864.92, novo:3151.41, cargos:LOTACOES_ANEXO3}
+];
+const EST_TOTAL_VAGAS = EST_PADROES.reduce((t,x)=>t+x.vagas,0);
+const EST_CHAVE = "portarias-estrutura-v1";
+const EST = (()=>{ let d=null; try{ d=JSON.parse(localStorage.getItem(EST_CHAVE)); }catch(e){}
+  const o={ocup:{}}; EST_PADROES.forEach(x=>{ o.ocup[x.p]=Array.isArray(d&&d.ocup&&d.ocup[x.p])?d.ocup[x.p]:[]; }); return o; })();
+function estSalvar(){ try{ localStorage.setItem(EST_CHAVE,JSON.stringify(EST)); }catch(e){} }
+/* valor de cada cargo no mês: tabela antiga antes de abril/2026, nova a partir dele;
+   reajustes do painel dos gabinetes com início DEPOIS de abril/2026 também valem aqui */
+function valorPC(p, ym){
+  ym = ym || estMes();
+  const P=EST_PADROES.find(x=>x.p===p); if(!P) return 0;
+  const f=(GAB.reajustes||[]).reduce((f,r)=>{ const i=inicioReaj(r); return (i>EST_VIGENCIA && i<=ym) ? f*(1+(Number(r.pct)||0)/100) : f; },1);
+  return (ym>=EST_VIGENCIA ? P.novo : P.base) * f;
+}
+
+const estEl=document.querySelector("[data-estr]");
+const estMesEl=estEl.querySelector("[data-estmes]"); estMesEl.value=mesAtual();
+const estMes=()=>/^\d{4}-\d{2}$/.test(estMesEl.value)?estMesEl.value:mesAtual();
+const estAbertos=new Set(); let estEdit=null;
+
+function estAbrirFechar(abrir){
+  if(abrir) gabAbrirFechar(false);
+  estEl.classList.toggle("fechado",!abrir);
+  if(abrir) document.body.classList.add("gabs-aberto");
+  else if(gabEl.classList.contains("fechado")) document.body.classList.remove("gabs-aberto");
+  try{ localStorage.setItem("portarias-estr-aberto",abrir?"1":"0"); }catch(e){}
+}
+estEl.querySelector("[data-estaba]").addEventListener("click",()=>estAbrirFechar(true));
+estEl.querySelector("[data-estfechar]").addEventListener("click",()=>estAbrirFechar(false));
+/* abrir os gabinetes fecha a estrutura (os dois ocupam o mesmo lado da tela) */
+gabEl.querySelector("[data-gababa]").addEventListener("click",()=>{ estEl.classList.add("fechado"); try{ localStorage.setItem("portarias-estr-aberto","0"); }catch(e){} });
+
+function estDesenhar(){
+  const ym=estMes(), filtro=_min(estEl.querySelector("[data-estbusca]").value);
+  let ocup=0, custo=0, acima=0;
+  const html=EST_PADROES.map(P=>{
+    const l=EST.ocup[P.p], n=l.length, v=valorPC(P.p,ym), tot=n*v, ruim=n>P.vagas;
+    ocup+=n; custo+=tot; if(ruim) acima++;
+    const bate=x=>!filtro || _min(x.nome).includes(filtro) || _min(x.cargo||"").includes(filtro) || String(x.mat||"").includes(filtro);
+    const visiveis=l.map((x,i)=>({x,i})).filter(o=>bate(o.x));
+    if(filtro && !visiveis.length && !_min(P.p+" "+P.desc).includes(filtro)) return "";
+    const aberto=estAbertos.has(P.p) || (!!filtro && visiveis.length>0);
+    const linhas=(filtro && !_min(P.p+" "+P.desc).includes(filtro) ? visiveis : l.map((x,i)=>({x,i}))).map(({x,i})=>{
+      if(estEdit && estEdit.p===P.p && estEdit.i===i) return `
+        <div class="gab-ln editando" data-esteditln>
+          <input data-esnome value="${escG(x.nome)}" placeholder="Nome do servidor" aria-label="Nome do servidor">
+          <input data-esmat value="${escG(x.mat||"")}" placeholder="Matrícula" inputmode="numeric" aria-label="Matrícula">
+          <input data-escargo value="${escG(x.cargo||"")}" placeholder="Cargo / lotação" list="est-dl-${escG(P.p)}" aria-label="Cargo ou lotação">
+          <div class="eac"><button type="button" class="ok" data-essalvar>Salvar</button><button type="button" class="nao" data-escanc>Cancelar</button></div>
+        </div>`;
+      return `<div class="gab-ln est-ln"><span class="n" title="${escG(x.nome)}">${escG(x.nome)}<small>${x.mat?`mat. ${escG(x.mat)} · `:""}${escG(x.cargo||"—")}</small></span><span class="vl">${moeda(v)}</span>
+        <span class="ac"><button type="button" class="ed" data-esed="${i}" title="Editar">✎</button><button type="button" class="x" data-esrem="${i}" title="Excluir da lista">×</button></span></div>`;
+    }).join("") || `<div class="gab-vazio">Nenhum servidor cadastrado neste padrão.</div>`;
+    const livres=P.vagas-n, pc=Math.min(100,n/P.vagas*100);
+    return `<div class="gab-it${ruim?" estouro":""}${aberto?" aberto":""}" data-p="${escG(P.p)}">
+      <button type="button" class="gab-h" data-estoggle>
+        <span class="gab-nome">${escG(P.p)} <small class="est-desc">${escG(P.desc)}</small></span>
+        <span class="gab-chips"><i class="chip est-val">${moeda(v)} cada</i>${ruim?`<i class="chip ruim">${n-P.vagas} acima do limite</i>`:livres?`<i class="chip">${livres} vago${livres>1?"s":""}</i>`:`<i class="chip ent">completo</i>`}</span>
+        <span class="gab-num${ruim?" ruim":""}"><b>${n}</b>/${P.vagas} <small>cargos</small></span>
+        <span class="gab-saldo"><small>custo mensal</small> ${moeda(tot)}</span>
+        <span class="gab-barra"><u style="width:${pc}%"></u></span>
+      </button>
+      <div class="gab-det"${aberto?"":" hidden"}>
+        <div class="est-nota">${escG(P.anexo)} da Res. nº 2.088/2025: <b>${P.vagas} cargo${P.vagas>1?"s":""}</b> · ${ym>=EST_VIGENCIA?`valor a partir de 01/04/2026 (antes: ${moeda(P.base)})`:`valor antes de 01/04/2026 (a partir dele: ${moeda(P.novo)})`}</div>
+        ${linhas}
+        <div class="gab-tot"><span>Ocupados <b>${n} de ${P.vagas}</b></span><span>Custo <b>${moeda(tot)}</b></span></div>
+        <div class="gab-add">
+          <input data-esanome placeholder="Nome do servidor">
+          <input data-esamat placeholder="Matrícula" inputmode="numeric">
+          <input data-esacargo placeholder="${P.anexo==="Anexo II"?"Cargo":"Lotação"}" list="est-dl-${escG(P.p)}">
+          <button type="button" data-esadd>+ Incluir no ${escG(P.p)}</button>
+        </div>
+        <div class="gab-msg" data-esmsg></div>
+        <datalist id="est-dl-${escG(P.p)}">${P.cargos.map(c=>`<option value="${escG(c)}">`).join("")}</datalist>
+      </div>
+    </div>`;
+  }).join("");
+  estEl.querySelector("[data-estlista]").innerHTML = html || `<div class="gab-vazio">Nada encontrado.</div>`;
+  estEl.querySelector("[data-estresumo]").innerHTML=`Res. nº 2.088/2025 · ${EST_TOTAL_VAGAS} cargos · ${ocup} ocupados · ${Math.max(0,EST_TOTAL_VAGAS-ocup)} vago${Math.max(0,EST_TOTAL_VAGAS-ocup)===1?"":"s"}`+(acima?` · <b class="ruim">${acima} padrão${acima>1?"ões":""} acima do limite</b>`:"");
+  estEl.querySelector("[data-estcusto]").textContent=moeda(custo);
+  estMostrarReajustes();
+  estEl.querySelector("[data-estaba]").classList.toggle("alerta",acima>0);
+  estEl.querySelector(".gabs-mes").classList.toggle("anterior", ym<mesAtual());
+  estEl.querySelector("[data-estmesres]").textContent = ym>=EST_VIGENCIA ? "valores de 01/04/2026" : "valores anteriores a 01/04/2026";
+  const ed=estEl.querySelector("[data-esnome]"); if(ed && document.activeElement===document.body) ed.focus();
+}
+estMesEl.addEventListener("change",estDesenhar);
+estEl.querySelector("[data-estreaj]").addEventListener("click",reajusteGeral);
+estEl.querySelector("[data-estreajdesf]").addEventListener("click",desfazerReajuste);
+function estMostrarReajustes(){
+  const box=estEl.querySelector("[data-estreajinfo]"), r=GAB.reajustes||[], ym=estMes();
+  box.hidden=!r.length; if(!r.length) return;
+  estEl.querySelector("[data-estreajtxt]").textContent="Reajustes gerais: "+r.map(x=>{ const i=inicioReaj(x);
+    return pctTxt(Number(x.pct))+" a partir de "+mmaa(i)+(i<=EST_VIGENCIA?" (já na tabela PC)":i>ym?" (ainda não vale neste mês)":""); }).join(" · ");
+}
+estEl.querySelector("[data-estbusca]").addEventListener("input",estDesenhar);
+
+function estIncluir(it){
+  const P=it.dataset.p, l=EST.ocup[P], msg=it.querySelector("[data-esmsg]");
+  const nEl=it.querySelector("[data-esanome]"), mEl=it.querySelector("[data-esamat]"), cEl=it.querySelector("[data-esacargo]");
+  const nome=up(nEl.value), mat=mEl.value.replace(/\D/g,""), cargo=up(cEl.value);
+  const erro=(t,el)=>{ msg.textContent=t; msg.className="gab-msg ruim"; el.focus(); };
+  if(!nome) return erro("Informe o nome do servidor.",nEl);
+  if(mat && EST_PADROES.some(x=>EST.ocup[x.p].some(s=>s.mat===mat))) return erro(`A matrícula ${mat} já está na estrutura administrativa.`,mEl);
+  const cheio=l.length>=EST_PADROES.find(x=>x.p===P).vagas;
+  if(cheio && !confirm(`O ${P} já tem todos os cargos ocupados pela Resolução nº 2.088. Incluir mesmo assim? (ficará marcado como acima do limite)`)) return;
+  l.push({nome,mat,cargo}); estSalvar(); estDesenhar();
+  const it2=estEl.querySelector(`.gab-it[data-p="${P}"]`), m2=it2&&it2.querySelector("[data-esmsg]");
+  if(m2){ m2.textContent=`✔ ${nome} incluído(a) no ${P}.`; m2.className="gab-msg ok"; it2.querySelector("[data-esanome]").focus(); }
+}
+function estSalvarEdicao(it){
+  const P=it.dataset.p, l=EST.ocup[P], s=estEdit&&l[estEdit.i]; if(!s) return;
+  const ln=it.querySelector("[data-esteditln]"), nome=up(ln.querySelector("[data-esnome]").value), mat=ln.querySelector("[data-esmat]").value.replace(/\D/g,""), cargo=up(ln.querySelector("[data-escargo]").value);
+  if(!nome){ ln.querySelector("[data-esnome]").focus(); return; }
+  s.nome=nome; s.mat=mat; s.cargo=cargo; estEdit=null; estSalvar(); estDesenhar();
+}
+estEl.addEventListener("click",e=>{
+  const it=e.target.closest(".gab-it");
+  if(e.target.closest("[data-estoggle]") && it){
+    const p=it.dataset.p; estAbertos.has(p)?estAbertos.delete(p):estAbertos.add(p); estDesenhar();
+    if(estAbertos.has(p)) setTimeout(()=>{ const x=estEl.querySelector(`.gab-it[data-p="${p}"]`); x&&x.scrollIntoView({block:"nearest",behavior:"smooth"}); },30);
+    return;
+  }
+  if(e.target.closest("[data-esadd]") && it) return estIncluir(it);
+  const ed=e.target.closest("[data-esed]"); if(ed && it){ estEdit={p:it.dataset.p,i:+ed.dataset.esed}; estDesenhar(); const f=estEl.querySelector("[data-esnome]"); if(f) f.focus(); return; }
+  if(e.target.closest("[data-essalvar]") && it) return estSalvarEdicao(it);
+  if(e.target.closest("[data-escanc]")){ estEdit=null; estDesenhar(); return; }
+  const rem=e.target.closest("[data-esrem]");
+  if(rem && it){ const l=EST.ocup[it.dataset.p], s=l[+rem.dataset.esrem];
+    if(s && confirm(`Excluir ${s.nome} (${it.dataset.p}) da estrutura administrativa?`)){ l.splice(+rem.dataset.esrem,1); estSalvar(); estDesenhar(); } }
+});
+estEl.addEventListener("keydown",e=>{
+  if(e.key!=="Enter") return; const it=e.target.closest(".gab-it"); if(!it) return;
+  if(e.target.matches("[data-esanome]")){ e.preventDefault(); it.querySelector("[data-esamat]").focus(); }
+  else if(e.target.matches("[data-esamat]")){ e.preventDefault(); it.querySelector("[data-esacargo]").focus(); }
+  else if(e.target.matches("[data-esacargo]")){ e.preventDefault(); estIncluir(it); }
+  else if(e.target.closest("[data-esteditln]")){ e.preventDefault(); estSalvarEdicao(it); }
+});
+
+/* salvar / abrir a lista (arquivo .json) */
+estEl.querySelector("[data-estsalvar]").addEventListener("click",()=>{
+  const blob=new Blob([JSON.stringify({tipo:"estrutura-administrativa", salvoEm:new Date().toISOString(), ocup:EST.ocup},null,1)],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=`estrutura-administrativa-${hojeISO()}.json`;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+});
+const estArq=estEl.querySelector("[data-estarq]");
+estEl.querySelector("[data-estabrir]").addEventListener("click",()=>estArq.click());
+function estImportar(d, nomeArq){
+  if(!d || d.tipo!=="estrutura-administrativa" || !d.ocup){ alert("Este arquivo não é uma lista da estrutura administrativa."); return; }
+  const n=EST_PADROES.reduce((s,x)=>s+(Array.isArray(d.ocup[x.p])?d.ocup[x.p].length:0),0);
+  const atual=EST_PADROES.reduce((s,x)=>s+EST.ocup[x.p].length,0);
+  if(atual && !confirm(`Abrir a lista "${nomeArq}" com ${n} servidores?${d.ref?"\n("+d.ref+")":""}\nA lista atual da estrutura administrativa (${atual} servidores) será substituída.`)) return;
+  EST_PADROES.forEach(x=>{ EST.ocup[x.p]=(Array.isArray(d.ocup[x.p])?d.ocup[x.p]:[]).map(s=>({nome:up(s.nome), mat:String(s.mat||"").replace(/\D/g,""), cargo:up(s.cargo||"")})); });
+  estSalvar(); estAbrirFechar(true); estDesenhar();
+  alert(`✔ Lista da estrutura administrativa carregada: ${n} servidores.`);
+}
+estArq.addEventListener("change",()=>{
+  const f=estArq.files[0]; estArq.value=""; if(!f) return;
+  f.text().then(t=>{ let d; try{ d=JSON.parse(t); }catch(e){ d=null; } estImportar(d, f.name); });
+});
+
+/* relatório para imprimir */
+estEl.querySelector("[data-estimprimir]").addEventListener("click",()=>{
+  const ym=estMes(), MesT=nomeMes(ym).replace(/^./,c=>c.toUpperCase()), agora=new Date();
+  const quando=agora.toLocaleDateString("pt-BR")+" às "+agora.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+  let tv=0, to=0, tc=0;
+  const resumo=EST_PADROES.map(P=>{ const n=EST.ocup[P.p].length, v=valorPC(P.p,ym); tv+=P.vagas; to+=n; tc+=n*v;
+    return `<tr${n>P.vagas?' class="ruim"':""}><td class="b">${P.p}</td><td>${escG(P.desc)}</td><td class="c">${P.vagas}</td><td class="c${n>P.vagas?" vermelho":""}">${n}</td><td class="c">${Math.max(0,P.vagas-n)}</td><td class="r">${moeda(v)}</td><td class="r">${moeda(n*v)}</td></tr>`; }).join("");
+  const secoes=EST_PADROES.map(P=>{ const l=EST.ocup[P.p], v=valorPC(P.p,ym);
+    return `<section><h2>${P.p} — ${escG(P.desc)} · ${l.length}/${P.vagas} cargos${l.length>P.vagas?`<span class="alerta">${l.length-P.vagas} acima do limite</span>`:""}</h2>
+      <table><thead><tr><th class="c">#</th><th>Nome</th><th class="c">Matrícula</th><th>Cargo / lotação</th><th>Valor</th></tr></thead><tbody>
+      ${l.map((s,i)=>`<tr><td class="c">${i+1}</td><td>${escG(s.nome)}</td><td class="c">${escG(s.mat||"—")}</td><td>${escG(s.cargo||"—")}</td><td class="r">${moeda(v)}</td></tr>`).join("") || `<tr><td colspan="5" class="vazio">Nenhum servidor cadastrado.</td></tr>`}
+      </tbody><tfoot><tr><td></td><td colspan="3">Total ${P.p}</td><td class="r">${moeda(l.length*v)}</td></tr></tfoot></table></section>`; }).join("");
+  const doc=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><title>Estrutura administrativa - ${MesT}</title><style>
+    @page{size:A4;margin:14mm 12mm 14mm}
+    *{box-sizing:border-box} body{font-family:Verdana,Arial,sans-serif;font-size:9pt;color:#111;margin:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    header{display:flex;align-items:center;gap:12px;border-bottom:2px solid #1c3d6e;padding-bottom:8px;margin-bottom:10px}
+    header img{height:58px} header .t b{display:block;font-size:12pt} header .t span{font-size:8.5pt;color:#444}
+    h1{font-size:12.5pt;text-align:center;margin:6px 0 2px;text-transform:uppercase;letter-spacing:.04em}
+    .sub{text-align:center;font-size:8.5pt;color:#555;margin:0 0 10px}
+    table{width:100%;border-collapse:collapse} th,td{border:1px solid #9aa3ad;padding:3.5px 5px;vertical-align:top}
+    th{background:#1c3d6e;color:#fff;font-size:8pt;text-align:left}
+    td.c,th.c{text-align:center} td.r{text-align:right;white-space:nowrap} td.b{font-weight:700}
+    tr:nth-child(even) td{background:#f1f4f8} tr.ruim td{background:#ffe1e1}
+    td.vermelho{color:#c00000!important;font-weight:700;background:#ffc9c9!important}
+    tfoot td{font-weight:700;background:#dfe6ef}
+    .resumo{page-break-after:always}
+    section{margin-bottom:14px}
+    h2{font-size:10pt;margin:0 0 5px;padding:5px 7px;background:#e7edf5;border-left:4px solid #1c3d6e}
+    h2 .alerta{color:#b00000;font-size:8.5pt;margin-left:6px}
+    .vazio{text-align:center;color:#777;font-style:italic}
+    .ass{margin-top:22px;font-size:8pt;color:#555;text-align:right}
+  </style></head><body>
+  <div class="resumo">
+    <header><img src="${LOGO}" alt=""><div class="t"><b>Câmara Municipal de Vitória</b><span>Estado do Espírito Santo</span></div></header>
+    <h1>Estrutura administrativa — cargos comissionados — ${MesT}</h1>
+    <p class="sub">Quantidade de cargos conforme a Resolução nº 2.088/2025 (Anexos II e III) · ${ym>=EST_VIGENCIA?"valores a partir de 01/04/2026":"valores anteriores a 01/04/2026"} · emitido em ${quando}</p>
+    <table><thead><tr><th>Padrão</th><th>Descrição</th><th class="c">Cargos (Res. 2.088)</th><th class="c">Ocupados</th><th class="c">Vagos</th><th>Valor do cargo</th><th>Custo mensal</th></tr></thead>
+    <tbody>${resumo}</tbody>
+    <tfoot><tr><td colspan="2">Total</td><td class="c">${tv}</td><td class="c">${to}</td><td class="c">${Math.max(0,tv-to)}</td><td></td><td class="r">${moeda(tc)}</td></tr></tfoot></table>
+  </div>
+  ${secoes}
+  <p class="ass">Relatório gerado pelo Gerador de Portarias de Pessoal em ${quando}.</p>
+  </body></html>`;
+  const old=document.getElementById("frame-relatorio"); if(old) old.remove();
+  const f=document.createElement("iframe"); f.id="frame-relatorio";
+  f.style.cssText="position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden";
+  document.body.appendChild(f);
+  f.onload=()=>{ const w=f.contentWindow; const img=w.document.images; const ir=()=>{ w.focus(); w.print(); };
+    Promise.all([...img].map(i=>i.complete?1:new Promise(r=>{i.onload=i.onerror=r;}))).then(()=>setTimeout(ir,150)); };
+  f.srcdoc=doc;
+});
+
+estDesenhar();
+(()=>{ let a=false; try{ a=localStorage.getItem("portarias-estr-aberto")==="1"; }catch(e){} if(a) estAbrirFechar(true); })();
 </script>
 <!-- =====================================================================
      SINCRONIZAÇÃO E COMPARTILHAMENTO COM GOOGLE DRIVE
@@ -2916,7 +3218,7 @@ aplicarTema(TEMAS.some(t=>t[0]===temaSalvo)?temaSalvo:"camara");
     // Chaves/valores que a página grava sozinha ao abrir (tema, painéis, lista padrão de
     // vereadores): são sincronizadas, mas não contam como "dados deste computador".
     SEM_IMPORTANCIA: function (chave, valor) {
-      if (['portaria-tema', 'portaria-tema-camara', 'portarias-gabs-fechado', 'portarias-contador-min'].indexOf(chave) >= 0) return true;
+      if (['portaria-tema', 'portaria-tema-camara', 'portarias-gabs-fechado', 'portarias-contador-min', 'portarias-estr-aberto'].indexOf(chave) >= 0) return true;
       if (chave === 'portarias-vereadores-v2') {
         try { return valor === JSON.stringify(ordenar(VEREADORES_PADRAO)); } catch (e) { return false; }
       }
