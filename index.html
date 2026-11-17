@@ -404,6 +404,13 @@
   .gabs.estr .gab-barra u{background:var(--estr2)}
   .gabs.estr .gab-it.estouro .gab-barra u{background:#d23434}
   .gabs.estr .gab-saldo{color:var(--ink)}
+  .gab-obs-l{display:flex!important;flex-direction:column;align-items:stretch;gap:4px;margin-top:9px;font-size:11.5px;font-weight:700;color:var(--muted);text-align:left!important;width:100%}
+  .gab-obs-l textarea{width:100%!important;box-sizing:border-box;margin:0!important}
+  .gab-obs-l textarea{font:inherit;font-weight:400;font-size:12px;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:8px;padding:7px 8px;resize:vertical;min-height:54px}
+  .gab-obs-l textarea:focus{outline:2px solid color-mix(in srgb,var(--accent) 45%,transparent);outline-offset:1px}
+  .gab-obs-l small{font-weight:400;font-size:10.5px}
+  .chip.obs-chip{background:color-mix(in srgb,#e8a400 18%,transparent);color:#8a5a00}
+  [data-tema="noturno"] .chip.obs-chip{color:#ffd166}
   @media print{.gabs{display:none}}
 
   .folhas .v[data-alvo]{cursor:pointer;transition:background .2s,box-shadow .2s}
@@ -1574,6 +1581,9 @@ const inicioReaj = r => r.inicio || String(r.data||"").slice(0,7);
 const ymPainel = () => { try { return gabMes(); } catch(e) { return mesAtual(); } };
 const fatorReajuste = ym => { ym = ym || ymPainel(); return (GAB.reajustes||[]).reduce((f,r)=>inicioReaj(r)<=ym ? f*(1+(Number(r.pct)||0)/100) : f, 1); };
 const fatorTotal = () => (GAB.reajustes||[]).reduce((f,r)=>f*(1+(Number(r.pct)||0)/100),1);
+/* observações de cada gabinete e de cada padrão da estrutura, para os relatórios */
+const obsGab = k => String((GAB.obs||{})[k]||"").trim();
+const obsRelHTML = t => t ? `<p style="border:1px solid #c9a100;background:#fff6cc;padding:5px 8px;border-radius:4px;font-size:8.5pt;margin:6px 0;white-space:pre-wrap"><b>Observações:</b> ${escG(t)}</p>` : "";
 const valorSGP = (p, ym) => (VENC_SGP[kPad(p)] || 0) * fatorReajuste(ym);
 /* verbaMes() guarda a verba com TODOS os reajustes; a de cada mês tira os que ainda não valiam */
 const verbaMes = ym => GAB.verba * fatorReajuste(ym) / fatorTotal();
@@ -1585,7 +1595,7 @@ const GAB = (()=>{
   if(!d || typeof d!=="object") d={};
   return { verba: Number(d.verba)>0 ? Number(d.verba) : VERBA_GAB_PADRAO, lista: (d.lista && typeof d.lista==="object") ? d.lista : {}, saidas: Array.isArray(d.saidas) ? d.saidas : [], entradas: Array.isArray(d.entradas) ? d.entradas : [],
     subs: (d.subs && typeof d.subs==="object") ? d.subs : {}, hist: Array.isArray(d.hist) ? d.hist : [],
-    reajustes: Array.isArray(d.reajustes) ? d.reajustes : [] };
+    reajustes: Array.isArray(d.reajustes) ? d.reajustes : [], obs: (d.obs && typeof d.obs==="object") ? d.obs : {} };
 })();
 function salvarGab(){ try{ localStorage.setItem(CHAVE_GAB,JSON.stringify(GAB)); }catch(e){} }
 const chaveSaida = (k,nome,pad) => k+"|"+_min(nome)+"|"+kPad(pad);
@@ -1784,9 +1794,11 @@ function gabEstrutura(){
           <button type="button" data-aadd>+ Incluir</button>
         </div>
         <div class="gab-msg" data-amsg></div>
+        <label class="gab-obs-l">📝 Observações para os relatórios<textarea data-gabobs rows="3" placeholder="Digite as observações deste gabinete. Elas saem nos relatórios."></textarea><small>Salvo automaticamente.</small></label>
         <button type="button" class="gab-imp" data-gabimp>🖨 Imprimir relatório deste gabinete</button>
       </div>
     </div>`; }).join("");
+  lst.querySelectorAll(".gab-it").forEach(it=>{ const ta=it.querySelector("[data-gabobs]"); if(ta) ta.value=(GAB.obs||{})[it.dataset.k]||""; });
   lst.querySelectorAll(".gab-it").forEach(it=>{ if(gabAbertos.has(it.dataset.k)){ it.classList.add("aberto"); it.querySelector(".gab-det").hidden=false; } });
 }
 function gabDesenhar(P){
@@ -1823,6 +1835,7 @@ function gabDesenhar(P){
       (g.entra.length?`<i class="chip ent">+${g.entra.length} na folha</i>`:"")+
       (g.sai.length?`<i class="chip sai">−${g.sai.length} na folha</i>`:"")+
       (g.substNovo.length?`<i class="chip sb">+${g.substNovo.length} substituição na folha</i>`:"")+
+      (obsGab(g.k)?`<i class="chip obs-chip" title="${escG(obsGab(g.k))}">📝 obs.</i>`:"")+
       (nm?`<i class="chip mes">${nm} mov. em ${MESES_G[+ym.slice(5)-1].slice(0,3)}/${ym.slice(2,4)}</i>`:"");
     if(!it.classList.contains("aberto")) return;
     const linha=(s,cls,acao,tag)=>`<div class="gab-ln ${cls}"><span class="n" title="${escG(s.nome)}">${escG(s.nome)}${s.mat?`<small>mat. ${escG(s.mat)}</small>`:""}</span><span class="p">${escG(s.padrao)}</span><span class="vl">${moeda(valorSGP(s.padrao))}</span>${acao||`<span class="tag">${tag}</span>`}</div>`;
@@ -1896,6 +1909,14 @@ gabMesEl.addEventListener("change",()=>gabRedesenhar());
 gabRedesenhar=()=>{ if(gabUltimo) gabAtualizar(gabUltimo); };
 
 gabEl.querySelector("[data-gabbusca]").addEventListener("input",gabRedesenhar);
+gabEl.addEventListener("input",e=>{
+  const ta=e.target.closest("[data-gabobs]"); if(!ta) return;
+  const k=ta.closest(".gab-it").dataset.k; if(!GAB.obs) GAB.obs={};
+  if(ta.value.trim()) GAB.obs[k]=ta.value; else delete GAB.obs[k];
+  salvarGab();
+  const ch=ta.closest(".gab-it").querySelector("[data-chips]"); clearTimeout(ta._t); ta._t=setTimeout(()=>{ if(document.activeElement!==ta) gabRedesenhar(); },800);
+});
+gabEl.addEventListener("focusout",e=>{ if(e.target.matches && e.target.matches("[data-gabobs]")) gabRedesenhar(); });
 gabEl.addEventListener("click",e=>{
   const it=e.target.closest(".gab-it");
   if(e.target.closest("[data-gabtoggle]") && it){
@@ -2045,7 +2066,7 @@ gabEl.querySelector("[data-gabreaj]").addEventListener("click",reajusteGeral);
 gabEl.querySelector("[data-gabreajdesf]").addEventListener("click",desfazerReajuste);
 /* backup: salva as listas dos gabinetes; abre esse backup ou o backup da Calculadora de Verbas */
 gabEl.querySelector("[data-gabsalvar]").addEventListener("click",()=>{
-  const blob=new Blob([JSON.stringify({app:"gerador-portarias-gabinetes", salvoEm:new Date().toISOString(), verba:GAB.verba, gabinetes:VEREADORES.map(v=>({vereador:v.nome, servidores:listaGab(_min(v.nome)).map(s=>({nome:s.nome, matricula:s.mat, padrao:s.padrao}))})), subs:GAB.subs, hist:GAB.hist, reajustes:GAB.reajustes},null,2)],{type:"application/json"});
+  const blob=new Blob([JSON.stringify({app:"gerador-portarias-gabinetes", salvoEm:new Date().toISOString(), verba:GAB.verba, gabinetes:VEREADORES.map(v=>({vereador:v.nome, servidores:listaGab(_min(v.nome)).map(s=>({nome:s.nome, matricula:s.mat, padrao:s.padrao}))})), subs:GAB.subs, hist:GAB.hist, reajustes:GAB.reajustes, obs:GAB.obs||{}},null,2)],{type:"application/json"});
   const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
   const d=new Date(); a.download=`GABINETES - ${String(d.getDate()).padStart(2,"0")}-${String(d.getMonth()+1).padStart(2,"0")}-${d.getFullYear()}.json`;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),1500);
@@ -2064,6 +2085,7 @@ gabArq.addEventListener("change",()=>{
       GAB.lista={}; if(Number(d.verba)>0) GAB.verba=Number(d.verba);
       if(d.subs && typeof d.subs==="object") GAB.subs=d.subs; if(Array.isArray(d.hist)) GAB.hist=d.hist;
       GAB.reajustes=Array.isArray(d.reajustes)?d.reajustes:[];
+      if(d.obs && typeof d.obs==="object") GAB.obs=d.obs;
       d.gabinetes.forEach(g=>{ const v=acharVer(g.vereador)||{nome:g.vereador}; GAB.lista[_min(v.nome)]=(g.servidores||[]).map(s=>({nome:up(s.nome), mat:String(s.matricula||"").replace(/\D/g,""), padrao:padraoOficial(s.padrao)})); });
       salvarGab(); gabRedesenhar(); return;
     }
@@ -2121,6 +2143,7 @@ function imprimirRelatorio(so){
       <h2>Gabinete do(a) Vereador(a) ${escG(g.nome)}${al.length?` <span class="alerta">⚠ ${al.join(" · ")}</span>`:""}</h2>
       <table class="srv"><thead><tr><th>#</th><th>Matrícula</th><th>Nome do servidor</th><th>Cargo</th><th>Padrão</th><th>Vencimento</th></tr></thead><tbody>${linhas}</tbody></table>
       ${saem}
+      ${obsRelHTML(obsGab(g.k))}
       ${g.substVis.length?`<p class="obs sb">Nomeado(s) em substituição neste gabinete (o titular continua na lista e a verba não muda): ${g.substVis.map(x=>`${escG(x.nome)}${x.mat?` (mat. ${escG(x.mat)})`:""} substitui ${escG(x.titNome)||"—"}${x.tmat?` (mat. ${escG(x.tmat)})`:""}${x.de?` de ${escG(x.de)}${x.ate?` a ${escG(x.ate)}`:""}`:""}`).join("; ")}.</p>`:""}
       <div class="tot"><div><span>Verba disponível</span><b>${moeda(verbaMes())}</b></div><div><span>Verba utilizada</span><b>${moeda(g.usado)}</b></div><div class="${g.estouroVerba?"neg":"pos"}"><span>Saldo restante</span><b>${moeda(g.saldo)}</b></div><div class="${g.estouroVagas?"neg":""}"><span>Servidores${g.estouroVagas?" — acima do limite":""}</span><b>${g.qtd}/${VAGAS_GAB}</b></div></div>
     </section>`;
@@ -2201,9 +2224,10 @@ function imprimirRelatorioMes(so){
     : (x.ate && x.ate<hojeISO() ? `Período terminou em ${dtBR(x.ate)} — aguardando exclusão manual` : `Em substituição (exclusão só manual)`);
   const resumo=dados.map((g,i)=>`<tr><td class="c">${i+1}</td><td>${escG(g.nome)}</td><td class="c">${g.nN||""}</td><td class="c">${g.nE||""}</td><td class="c">${g.nSi||""}</td><td class="c">${g.nSf||""}</td><td class="c">${g.subs.length||""}</td><td class="c">${g.lista.length}/${VAGAS_GAB}</td><td class="r">${moeda(g.usado)}</td></tr>`).join("");
   const T=k=>dados.reduce((t,g)=>t+g[k],0);
-  const mostrar=ind?dados:dados.filter(g=>g.movs.length||g.subs.length);
+  const mostrar=ind?dados:dados.filter(g=>g.movs.length||g.subs.length||obsGab(g.k));
   const secoes=mostrar.map(g=>`<section>
     <h2>Gabinete do(a) Vereador(a) ${escG(g.nome)}</h2>
+    ${obsRelHTML(obsGab(g.k))}
     <h3>Movimentações em ${nomeMes(ym)}</h3>
     ${g.movs.length?`<table><thead><tr><th class="c">Data</th><th>Movimentação</th><th>Servidor</th><th class="c">Matrícula</th><th class="c">Padrão</th><th class="c">Processo</th><th>Observação</th></tr></thead><tbody>${
       g.movs.map(m=>`<tr class="${m.tipo}"><td class="c">${dtBR(m.data)}</td><td>${TIPO_MOV[m.tipo]||m.tipo}</td><td>${escG(m.nome)}</td><td class="c">${escG(m.mat)||"—"}</td><td class="c">${escG(m.padrao)||"—"}</td><td class="c">${escG(m.proc)||"—"}</td><td class="obs2">${escG(m.obs)}</td></tr>`).join("")}</tbody></table>`:`<p class="vazio">Nenhuma movimentação registrada neste mês.</p>`}
@@ -2898,7 +2922,8 @@ const EST_PADROES = [
 const EST_TOTAL_VAGAS = EST_PADROES.reduce((t,x)=>t+x.vagas,0);
 const EST_CHAVE = "portarias-estrutura-v1";
 const EST = (()=>{ let d=null; try{ d=JSON.parse(localStorage.getItem(EST_CHAVE)); }catch(e){}
-  const o={ocup:{}}; EST_PADROES.forEach(x=>{ o.ocup[x.p]=Array.isArray(d&&d.ocup&&d.ocup[x.p])?d.ocup[x.p]:[]; }); return o; })();
+  const o={ocup:{}, obs:(d&&d.obs&&typeof d.obs==="object")?d.obs:{}}; EST_PADROES.forEach(x=>{ o.ocup[x.p]=Array.isArray(d&&d.ocup&&d.ocup[x.p])?d.ocup[x.p]:[]; }); return o; })();
+const obsEst = p => String((EST.obs||{})[p]||"").trim();
 function estSalvar(){ try{ localStorage.setItem(EST_CHAVE,JSON.stringify(EST)); }catch(e){} }
 /* valor de cada cargo no mês: tabela antiga antes de abril/2026, nova a partir dele;
    reajustes do painel dos gabinetes com início DEPOIS de abril/2026 também valem aqui */
@@ -2951,7 +2976,7 @@ function estDesenhar(){
     return `<div class="gab-it${ruim?" estouro":""}${aberto?" aberto":""}" data-p="${escG(P.p)}">
       <button type="button" class="gab-h" data-estoggle>
         <span class="gab-nome">${escG(P.p)} <small class="est-desc">${escG(P.desc)}</small></span>
-        <span class="gab-chips"><i class="chip est-val">${moeda(v)} cada</i>${ruim?`<i class="chip ruim">${n-P.vagas} acima do limite</i>`:livres?`<i class="chip">${livres} vago${livres>1?"s":""}</i>`:`<i class="chip ent">completo</i>`}</span>
+        <span class="gab-chips"><i class="chip est-val">${moeda(v)} cada</i>${obsEst(P.p)?`<i class="chip obs-chip" title="${escG(obsEst(P.p))}">📝 obs.</i>`:""}${ruim?`<i class="chip ruim">${n-P.vagas} acima do limite</i>`:livres?`<i class="chip">${livres} vago${livres>1?"s":""}</i>`:`<i class="chip ent">completo</i>`}</span>
         <span class="gab-num${ruim?" ruim":""}"><b>${n}</b>/${P.vagas} <small>cargos</small></span>
         <span class="gab-saldo"><small>custo mensal</small> ${moeda(tot)}</span>
         <span class="gab-barra"><u style="width:${pc}%"></u></span>
@@ -2967,6 +2992,7 @@ function estDesenhar(){
           <button type="button" data-esadd>+ Incluir no ${escG(P.p)}</button>
         </div>
         <div class="gab-msg" data-esmsg></div>
+        <label class="gab-obs-l">📝 Observações para o relatório<textarea data-esobs rows="3" placeholder="Digite as observações do ${escG(P.p)}. Elas saem no relatório.">${escG((EST.obs||{})[P.p]||"")}</textarea><small>Salvo automaticamente.</small></label>
         <datalist id="est-dl-${escG(P.p)}">${P.cargos.map(c=>`<option value="${escG(c)}">`).join("")}</datalist>
       </div>
     </div>`;
@@ -2990,6 +3016,13 @@ function estMostrarReajustes(){
     return pctTxt(Number(x.pct))+" a partir de "+mmaa(i)+(i<=EST_VIGENCIA?" (já na tabela PC)":i>ym?" (ainda não vale neste mês)":""); }).join(" · ");
 }
 estEl.querySelector("[data-estbusca]").addEventListener("input",estDesenhar);
+estEl.addEventListener("input",e=>{
+  const ta=e.target.closest("[data-esobs]"); if(!ta) return;
+  const p=ta.closest(".gab-it").dataset.p; if(!EST.obs) EST.obs={};
+  if(ta.value.trim()) EST.obs[p]=ta.value; else delete EST.obs[p];
+  estSalvar();
+});
+estEl.addEventListener("focusout",e=>{ if(e.target.matches && e.target.matches("[data-esobs]")) setTimeout(()=>{ if(!estEl.contains(document.activeElement) || !document.activeElement.matches("[data-esobs]")) estDesenhar(); },0); });
 
 function estIncluir(it){
   const P=it.dataset.p, l=EST.ocup[P], msg=it.querySelector("[data-esmsg]");
@@ -3035,7 +3068,7 @@ estEl.addEventListener("keydown",e=>{
 
 /* salvar / abrir a lista (arquivo .json) */
 estEl.querySelector("[data-estsalvar]").addEventListener("click",()=>{
-  const blob=new Blob([JSON.stringify({tipo:"estrutura-administrativa", salvoEm:new Date().toISOString(), ocup:EST.ocup},null,1)],{type:"application/json"});
+  const blob=new Blob([JSON.stringify({tipo:"estrutura-administrativa", salvoEm:new Date().toISOString(), ocup:EST.ocup, obs:EST.obs||{}},null,1)],{type:"application/json"});
   const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=`estrutura-administrativa-${hojeISO()}.json`;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),4000);
 });
@@ -3047,6 +3080,7 @@ function estImportar(d, nomeArq){
   const atual=EST_PADROES.reduce((s,x)=>s+EST.ocup[x.p].length,0);
   if(atual && !confirm(`Abrir a lista "${nomeArq}" com ${n} servidores?${d.ref?"\n("+d.ref+")":""}\nA lista atual da estrutura administrativa (${atual} servidores) será substituída.`)) return;
   EST_PADROES.forEach(x=>{ EST.ocup[x.p]=(Array.isArray(d.ocup[x.p])?d.ocup[x.p]:[]).map(s=>({nome:up(s.nome), mat:String(s.mat||"").replace(/\D/g,""), cargo:up(s.cargo||"")})); });
+  if(d.obs && typeof d.obs==="object") EST.obs=d.obs;
   estSalvar(); estAbrirFechar(true); estDesenhar();
   alert(`✔ Lista da estrutura administrativa carregada: ${n} servidores.`);
 }
@@ -3063,7 +3097,7 @@ estEl.querySelector("[data-estimprimir]").addEventListener("click",()=>{
   const resumo=EST_PADROES.map(P=>{ const n=EST.ocup[P.p].length, v=valorPC(P.p,ym); tv+=P.vagas; to+=n; tc+=n*v;
     return `<tr${n>P.vagas?' class="ruim"':""}><td class="b">${P.p}</td><td>${escG(P.desc)}</td><td class="c">${P.vagas}</td><td class="c${n>P.vagas?" vermelho":""}">${n}</td><td class="c">${Math.max(0,P.vagas-n)}</td><td class="r">${moeda(v)}</td><td class="r">${moeda(n*v)}</td></tr>`; }).join("");
   const secoes=EST_PADROES.map(P=>{ const l=EST.ocup[P.p], v=valorPC(P.p,ym);
-    return `<section><h2>${P.p} — ${escG(P.desc)} · ${l.length}/${P.vagas} cargos${l.length>P.vagas?`<span class="alerta">${l.length-P.vagas} acima do limite</span>`:""}</h2>
+    return `<section><h2>${P.p} — ${escG(P.desc)} · ${l.length}/${P.vagas} cargos${l.length>P.vagas?`<span class="alerta">${l.length-P.vagas} acima do limite</span>`:""}</h2>${obsRelHTML(obsEst(P.p))}
       <table><thead><tr><th class="c">#</th><th>Nome</th><th class="c">Matrícula</th><th>Cargo / lotação</th><th>Valor</th></tr></thead><tbody>
       ${l.map((s,i)=>`<tr><td class="c">${i+1}</td><td>${escG(s.nome)}</td><td class="c">${escG(s.mat||"—")}</td><td>${escG(s.cargo||"—")}</td><td class="r">${moeda(v)}</td></tr>`).join("") || `<tr><td colspan="5" class="vazio">Nenhum servidor cadastrado.</td></tr>`}
       </tbody><tfoot><tr><td></td><td colspan="3">Total ${P.p}</td><td class="r">${moeda(l.length*v)}</td></tr></tfoot></table></section>`; }).join("");
