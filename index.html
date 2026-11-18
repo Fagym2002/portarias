@@ -3272,7 +3272,7 @@ estDesenhar();
   var CHAVE_TOKEN = '__driveSync_tk';
   var NOMES_PAPEL = { dono: 'Seus dados', editor: 'Pode editar', leitor: 'Somente visualização' };
 
-  var tokenClient = null, token = null, tokenExpira = 0, esperaToken = null;
+  var tokenClient = null, token = null, tokenExpira = 0, esperaToken = null, timerFechou = null;
   var ultimoRetrato = null, timerSalvar = null, salvando = false, salvarDeNovo = false;
   var conectado = false, arquivo = null, papel = 'dono', remotoNovoEm = 0;
   var paramDados = null;
@@ -3390,17 +3390,31 @@ estDesenhar();
     tokenClient = google.accounts.oauth2.initTokenClient({
       client_id: CONFIG.CLIENT_ID, scope: ESCOPO, login_hint: lerMeta().email || undefined,
       callback: function (resp) {
-        var w = esperaToken; esperaToken = null; if (!w) return;
-        if (resp.error) return w.reject(new Error(resp.error_description || resp.error));
-        if (!google.accounts.oauth2.hasGrantedAllScopes(resp, ESCOPO)) return w.reject(new Error('Permissão de acesso ao Drive não concedida.'));
+        clearTimeout(timerFechou);
+        var w = esperaToken; esperaToken = null;
+        var falha = resp.error ? (resp.error_description || resp.error) :
+                    !google.accounts.oauth2.hasGrantedAllScopes(resp, ESCOPO) ? 'Permissão de acesso ao Drive não concedida. Clique em Entrar e marque a caixa de acesso ao Google Drive.' : null;
+        if (falha) { if (w) w.reject(new Error(falha)); else { telaDesconectado(); status(falha, 'erro'); } return; }
         token = resp.access_token; tokenExpira = Date.now() + (resp.expires_in - 60) * 1000;
         try { sessionStorage.setItem(CHAVE_TOKEN, JSON.stringify({ t: token, e: tokenExpira })); } catch (e) {}
-        w.resolve(token);
+        if (w) w.resolve(token);
+        else if (!conectado) conectar(false);     /* a resposta chegou depois do aviso de janela fechada: segue o login */
       },
       error_callback: function (err) {
+        var tipo = err && err.type;
+        /* Alguns navegadores avisam "janela fechada" um instante ANTES de entregar o login concluído.
+           Por isso espera alguns segundos pela resposta antes de dar o erro. */
+        if (tipo === 'popup_closed') {
+          clearTimeout(timerFechou);
+          status('Concluindo o login…', 'trab');
+          timerFechou = setTimeout(function () {
+            var w = esperaToken; esperaToken = null; if (!w) return;
+            var e = new Error('A janela de login foi fechada antes de concluir. Clique em Entrar com Google e conclua na janela do Google.'); e.login = true; w.reject(e);
+          }, 4000);
+          return;
+        }
         var w = esperaToken; esperaToken = null; if (!w) return;
-        var e = new Error(err && err.type === 'popup_closed' ? 'Janela de login fechada.' :
-                          err && err.type === 'popup_failed_to_open' ? 'O navegador bloqueou a janela de login. Clique em Conectar.' : 'Falha no login.');
+        var e = new Error(tipo === 'popup_failed_to_open' ? 'O navegador bloqueou a janela de login. Permita pop-ups para este site e clique em Conectar.' : 'Falha no login.');
         e.login = true; w.reject(e);
       }
     });
