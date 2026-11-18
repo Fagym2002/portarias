@@ -3277,6 +3277,22 @@ estDesenhar();
   var conectado = false, arquivo = null, papel = 'dono', remotoNovoEm = 0;
   var paramDados = null;
   try { paramDados = new URLSearchParams(location.search).get('dados'); } catch (e) {}
+  var CHAVE_MODO = '__driveSync_modo', CHAVE_ESTADO = '__driveSync_estado';
+  var modoPagina = false; try { modoPagina = localStorage.getItem(CHAVE_MODO) === 'pagina'; } catch (e) {}
+  /* volta do login pela página do Google: o token vem no endereço (#access_token=...) */
+  var retornoLogin = null;
+  (function () {
+    if (!/[#&](access_token|error)=/.test(location.hash)) return;
+    var h = new URLSearchParams(location.hash.slice(1)), est = null;
+    try { est = JSON.parse(sessionStorage.getItem(CHAVE_ESTADO)); sessionStorage.removeItem(CHAVE_ESTADO); } catch (e) {}
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+    if (!est || est.s !== h.get('state')) return;
+    if (est.dados) paramDados = est.dados;
+    if (h.get('error')) { retornoLogin = { erro: h.get('error') === 'access_denied' ? 'Acesso negado pelo Google. Confira se esta conta está na lista de usuários de teste.' : 'Falha no login: ' + h.get('error') }; return; }
+    var esc = (h.get('scope') || '').split(' ');
+    if (esc.indexOf('https://www.googleapis.com/auth/drive.file') < 0) { retornoLogin = { erro: 'Permissão de acesso ao Drive não concedida. Entre de novo e marque a caixa de acesso ao Google Drive.' }; return; }
+    retornoLogin = { t: h.get('access_token'), e: Date.now() + (Number(h.get('expires_in')) - 60) * 1000 };
+  })();
 
   /* ---------------- utilidades ---------------- */
   function $(id) { return document.getElementById(id); }
@@ -3342,7 +3358,23 @@ estDesenhar();
     conectado = false; fonte();
     var m = lerMeta();
     status(m.email ? 'Desconectado. Última sincronização: ' + hora(m.sincronizadoEm) + '.' : 'Entre com o Google para salvar seus dados no Drive.', '');
-    botoes([[m.email ? 'Conectar (' + m.email + ')' : 'Entrar com Google', function () { conectar(true); }, 'drv-prim']]);
+    var rotulo = m.email ? 'Conectar (' + m.email + ')' : 'Entrar com Google';
+    if (modoPagina) botoes([[rotulo, function () { loginPagina(); }, 'drv-prim'], ['Tentar pela janela', function () { conectar(true); }]]);
+    else botoes([[rotulo, function () { conectar(true); }, 'drv-prim'], ['Entrar pela página do Google', function () { loginPagina(); }]]);
+  }
+  /* login sem janela: a própria página vai ao Google e volta já conectada */
+  function loginPagina() {
+    if (!configurado(CONFIG.CLIENT_ID)) return;
+    try { localStorage.setItem(CHAVE_MODO, 'pagina'); } catch (e) {}
+    var st = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    try { sessionStorage.setItem(CHAVE_ESTADO, JSON.stringify({ s: st, dados: paramDados })); } catch (e) {}
+    var m = lerMeta(), q = {
+      client_id: CONFIG.CLIENT_ID, redirect_uri: location.origin + location.pathname, response_type: 'token',
+      scope: ESCOPO, include_granted_scopes: 'true', state: st
+    };
+    if (m.email) q.login_hint = m.email; else q.prompt = 'consent';
+    status('Indo para a página de login do Google…', 'trab');
+    location.assign('https://accounts.google.com/o/oauth2/v2/auth?' + new URLSearchParams(q).toString());
   }
   function telaConectado(texto, estado) {
     conectado = true; fonte();
@@ -3409,7 +3441,8 @@ estDesenhar();
           status('Concluindo o login…', 'trab');
           timerFechou = setTimeout(function () {
             var w = esperaToken; esperaToken = null; if (!w) return;
-            var e = new Error('A janela de login foi fechada antes de concluir. Clique em Entrar com Google e conclua na janela do Google.'); e.login = true; w.reject(e);
+            modoPagina = true;
+            var e = new Error('A janela de login não devolveu o acesso. Clique em "Entrar com Google": agora o login será feito pela página do Google.'); e.login = true; w.reject(e);
           }, 4000);
           return;
         }
@@ -3422,6 +3455,8 @@ estDesenhar();
   }
   function pedirToken(interativo) {
     if (token && Date.now() < tokenExpira) return Promise.resolve(token);
+    if (modoPagina && !interativo) { var e0 = new Error('Sessão expirada.'); e0.login = true; return Promise.reject(e0); }
+    if (modoPagina && interativo) { loginPagina(); return new Promise(function () {}); }
     if (!tokenClient) return Promise.reject(new Error('Login indisponível.'));
     return new Promise(function (resolve, reject) {
       esperaToken = { resolve: resolve, reject: reject };
@@ -3843,6 +3878,8 @@ estDesenhar();
     iniciarCliente();
     if (!tokenClient) return;
     var g = null; try { g = JSON.parse(sessionStorage.getItem(CHAVE_TOKEN)); } catch (e) {}
+    if (retornoLogin && retornoLogin.erro) { telaDesconectado(); status(retornoLogin.erro, 'erro'); return; }
+    if (retornoLogin && retornoLogin.t) { g = retornoLogin; try { sessionStorage.setItem(CHAVE_TOKEN, JSON.stringify(g)); } catch (e) {} }
     if (aviso) { try { sessionStorage.removeItem(CHAVE_AVISO); } catch (e) {} }
     if (g && g.t && Date.now() < g.e) {
       token = g.t; tokenExpira = g.e;           // recarregou nesta aba: continua conectado
